@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora de IMC</title>
+
+  <!-- Font Awesome 4.7 (ícones fa fa-...) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #000;
+      font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+      color: #3b1030;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+      min-height: 300px;
+      padding: 36px 40px;
+      background: #cc79a7;
+      border-radius: 90px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .tela {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .tela.ativa {
+      display: flex;
+    }
+
+    .icone-imc {
+      font-size: 44px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      width: 100%;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 600;
+      padding-left: 6px;
+      margin-bottom: 4px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 18px;
+      border: 2px solid transparent;
+      border-radius: 30px;
+      background: #f7e3ee;
+      font-size: 16px;
+      color: #3b1030;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #3b1030;
+    }
+
+    button {
+      margin-top: 6px;
+      padding: 12px 34px;
+      border: none;
+      border-radius: 30px;
+      background: #3b1030;
+      color: #f7e3ee;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #55194a;
+    }
+
+    button:focus-visible {
+      outline: 3px solid #f7e3ee;
+      outline-offset: 2px;
+    }
+
+    .erro {
+      min-height: 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #5c0a2e;
+    }
+
+    /* Tela de resultado */
+    #carinha {
+      font-size: 96px;
+    }
+
+    #valor-imc {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    #mensagem {
+      font-size: 17px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 420px) {
+      .container {
+        padding: 32px 26px;
+        border-radius: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- TELA 1: formulário -->
+    <div class="tela ativa" id="tela-form">
+      <i class="fa fa-balance-scale icone-imc" aria-hidden="true"></i>
+      <h1>Calculadora de IMC</h1>
+
+      <div style="width:100%">
+        <label for="peso">Peso (kg)</label>
+        <input type="text" id="peso" inputmode="decimal" placeholder="Ex.: 68,5">
+      </div>
+
+      <div style="width:100%">
+        <label for="altura">Altura (m)</label>
+        <input type="text" id="altura" inputmode="decimal" placeholder="Ex.: 1,70">
+      </div>
+
+      <p class="erro" id="erro" role="alert"></p>
+
+      <button type="button" id="btn-calcular">Calcular</button>
+    </div>
+
+    <!-- TELA 2: resultado -->
+    <div class="tela" id="tela-resultado">
+      <i id="carinha" class="fa" aria-hidden="true"></i>
+      <p id="valor-imc"></p>
+      <p id="mensagem"></p>
+      <button type="button" id="btn-voltar">Calcular novamente</button>
+    </div>
+
+  </div>
+
+  <script>
+    const telaForm = document.getElementById("tela-form");
+    const telaResultado = document.getElementById("tela-resultado");
+    const inputPeso = document.getElementById("peso");
+    const inputAltura = document.getElementById("altura");
+    const erro = document.getElementById("erro");
+    const carinha = document.getElementById("carinha");
+    const valorImc = document.getElementById("valor-imc");
+    const mensagem = document.getElementById("mensagem");
+
+    // Aceita vírgula ou ponto como separador decimal
+    function lerNumero(texto) {
+      return parseFloat(texto.replace(",", ".").trim());
+    }
+
+    function classificar(imc) {
+      if (imc < 18.5) {
+        return {
+          icone: "fa-frown-o",
+          texto: "Você está abaixo do peso ideal (muito magro). Procure um profissional de saúde."
+        };
+      }
+      if (imc < 25) {
+        return {
+          icone: "fa-smile-o",
+          texto: "Parabéns! Você está dentro do peso ideal."
+        };
+      }
+      if (imc < 30) {
+        return {
+          icone: "fa-meh-o",
+          texto: "Atenção: você está acima do peso."
+        };
+      }
+      return {
+        icone: "fa-frown-o",
+        texto: "Você está fora do limite de peso (obesidade). Procure um profissional de saúde."
+      };
+    }
+
+    function calcular() {
+      const peso = lerNumero(inputPeso.value);
+      const altura = lerNumero(inputAltura.value);
+
+      if (!(peso > 0) || !(altura > 0)) {
+        erro.textContent = "Informe peso e altura com valores maiores que zero.";
+        return;
+      }
+      if (altura > 3) {
+        erro.textContent = "Digite a altura em metros. Exemplo: 1,70";
+        return;
+      }
+
+      erro.textContent = "";
+
+      const imc = peso / (altura * altura);
+      const resultado = classificar(imc);
+
+      carinha.className = "fa " + resultado.icone;
+      valorImc.textContent = "Seu IMC: " + imc.toFixed(1).replace(".", ",");
+      mensagem.textContent = resultado.texto;
+
+      telaForm.classList.remove("ativa");
+      telaResultado.classList.add("ativa");
+    }
+
+    function voltar() {
+      inputPeso.value = "";
+      inputAltura.value = "";
+      telaResultado.classList.remove("ativa");
+      telaForm.classList.add("ativa");
+      inputPeso.focus();
+    }
+
+    document.getElementById("btn-calcular").addEventListener("click", calcular);
+    document.getElementById("btn-voltar").addEventListener("click", voltar);
+
+    // Enter nos campos também calcula
+    [inputPeso, inputAltura].forEach(function (campo) {
+      campo.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") calcular();
+      });
+    });
+  </script>
+</body>
+</html>
